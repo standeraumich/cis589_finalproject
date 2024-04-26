@@ -8,7 +8,9 @@ from birdnetlib.analyzer import Analyzer
 from datetime import datetime
 import os
 import pandas as pd
+import requests 
 
+url = 'http://localhost:3001/birds'
 g = geocoder.ip('me')
 # Parameters for audio recording
 RATE = 44100  # Sampling rate
@@ -105,7 +107,7 @@ try:
             full_data = np.array(full_data)
             # If currently writing to a file, close it
             duration = full_data.size / RATE
-            if duration > 4 and output_wavefile is None:
+            if duration > 3 and output_wavefile is None:
                 print(duration)
                 file_count += 1
                 output_filename = output_filename_template.format(count=file_count)
@@ -130,16 +132,11 @@ try:
                     birds.append(item['common_name'])
                 birds = list(set(birds))
                 print(birds)
-                datetimes = [datetime.now()] * len(birds)
-                data_dict = {'Date and Time':datetimes, 'Bird':birds}
-                df_old = pd.read_csv('bird_data.csv')
-                df_new = pd.DataFrame(data=data_dict)
-                if df_old.empty:
-                    df_all = df_new
-                else:
-                    df_all = pd.concat([df_old,df_new], ignore_index=True)
-                df_all.to_csv('bird_data.csv', index=False)
-                os.remove(output_filename)
+                for bird in birds: 
+                    data_obj = {"bird": bird, "lat":g.latlng[0], "lon":g.latlng[1]}
+                    x = requests.post(url, json = data_obj)
+                    print(x.text)
+                # os.remove(output_filename)
             output_wavefile = None
             full_data = []
 
